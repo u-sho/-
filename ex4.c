@@ -1,6 +1,7 @@
 //課題4用プログラム
 
 #include<stdio.h>
+#include<stdlib.h>
 void sb(unsigned char[4][4]);
 void sr(unsigned char[4][4]);
 void mc(unsigned char[4][4]);
@@ -9,13 +10,12 @@ void ark(unsigned char[4][4]);
 void ke();
 void printMatrix(char*, unsigned char[4][4]);
 void stringToMatrix(const unsigned char[], unsigned char[4][4]);
-void midEncrypt(unsigned char[4][4]);
+void midEncrypt(unsigned char[4][4], const unsigned char[]);
 int deffByteBetween(const unsigned char[4][4], const unsigned char[4][4]);
 void printPosOfDiff(const unsigned char[4][4], const unsigned char[4][4]);
 // void inv_sb();
 // void inv_sr();
 // void inv_mc();
-
 
 //平文ペア
 unsigned char pt[13][2][33] =
@@ -76,9 +76,6 @@ unsigned char state2[4][4] =
 
 unsigned char key[4][4];
 
-// unsigned char
-// key11,key12,key13,key14,key21,key22,key23,key24,
-// key31,key32,key33,key34,key41,key42,key43,key44;
 unsigned char w[176];
 
 
@@ -138,72 +135,88 @@ void printPosOfDiff(const unsigned char mt1[4][4], const unsigned char mt2[4][4]
 }
 
 int main(void){
-	int i, j;
-	for(i = 0; i < 13; i++){
-		for(j = 0; j < 2; j++){
-			stringToMatrix(pt[i][j], state[i][j]);
-		}
-	}
+	int i=0, j, k, l, m;
+    int flg = 1;
+    unsigned char t[33];
 
+	//for(i = 0; i < 13; i++){
+		//printf("平文ペア%d\n", i + 1);
+        stringToMatrix(pt[i][0], state1);
+		//printMatrix("平文1　", state1);
+        stringToMatrix(pt[i][1], state2);
+		//printMatrix("平文2　", state2);
+		//printf("差分　　: %dバイト\n", deffByteBetween(state1, state2));
+		//printf("差分位置: ");
+		//printPosOfDiff(state1, state2);
 
-	for(i = 0; i < 13; i++){
-		printf("平文ペア%d\n", i + 1);
-
-		printMatrix("平文1　", state[i][0]);
-		printMatrix("平文2　", state[i][1]);
-		printf("差分　　: %dバイト\n", deffByteBetween(state[i][0], state[i][1]));
-		printf("差分位置: ");
-		printPosOfDiff(state[i][0], state[i][0]);
-
-		midEncrypt(state[i][0]);
-		midEncrypt(state[i][1]);
-		printMatrix("中間値1", state[i][0]);
-		printMatrix("中間値2", state[i][1]);
-		printf("差分　　: %dバイト\n", deffByteBetween(state[i][0], state[i][1]));
-		printf("差分位置: ");
-		printPosOfDiff(state[i][0], state[i][0]);
+        for (j = 0; j < 256 && flg; j++) {
+            sprintf(t  , "%x", j);
+            sprintf(t+8, "%x", j);
+            sprintf(t+16, "%x", j);
+            sprintf(t+24, "%x", j);
+            for (k = 0; k < 256 && flg; k++) {
+                sprintf(t+2, "%x", k);
+                sprintf(t+2 + 8, "%x", k);
+                sprintf(t+2 +16, "%x", k);
+                sprintf(t+2 +24, "%x", k);
+                for (l = 0; l < 256 && flg; l++) {
+                    sprintf(t+4, "%x", l);
+                    sprintf(t+4 + 8, "%x", l);
+                    sprintf(t+4 +16, "%x", l);
+                    sprintf(t+4 +24, "%x", l);
+                    for (m = 0; m < 256 && flg; m++) { // 256 * 256 * 256 * 256 ~ 4e9
+                        sprintf(t+6, "%x", m);
+                        sprintf(t+6 + 8, "%x", m);
+                        sprintf(t+6 +16, "%x", m);
+                        sprintf(t+6 +24, "%x", m);
+                        midEncrypt(state1, t);
+                        midEncrypt(state2, t);
+                        //printMatrix("中間値1", state1);
+                        //printMatrix("中間値2", state1);
+                        if(1 == deffByteBetween(state1, state2)) {
+                            printMatrix("key ", key);
+                            flg = 0;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
 
 		putchar('\n');
-	}
+	//}
+    return 0;
 }
 
 
-void midEncrypt(unsigned char st[4][4]){
+void midEncrypt(unsigned char st[4][4], const unsigned char keyValue[]) {
 
-	int i, j;
-	for(i = 0; i < 4; i++){
-		for(j = 0; j < 4; j++){
-			key[j][i] = 4 * i + j;
-		}
-	}
+    stringToMatrix(keyValue, key);
 
 	ke();
 	ark(st);
 
 
-	for(i = 1; i <= 1/* 元々は 10 */; i++){
-		key[0][0] = w[16 * i];
-		key[1][0] = w[16 * i +  1];
-		key[2][0] = w[16 * i +  2];
-		key[3][0] = w[16 * i +  3];
-		key[0][1] = w[16 * i +  4];
-		key[1][1] = w[16 * i +  5];
-		key[2][1] = w[16 * i +  6];
-		key[3][1] = w[16 * i +  7];
-		key[0][2] = w[16 * i +  8];
-		key[1][2] = w[16 * i +  9];
-		key[2][2] = w[16 * i + 10];
-		key[3][2] = w[16 * i + 11];
-		key[0][3] = w[16 * i + 12];
-		key[1][3] = w[16 * i + 13];
-		key[2][3] = w[16 * i + 14];
-		key[3][3] = w[16 * i + 15];
+    key[0][0] = w[16];
+    key[1][0] = w[16 +  1];
+    key[2][0] = w[16 +  2];
+    key[3][0] = w[16 +  3];
+    key[0][1] = w[16 +  4];
+    key[1][1] = w[16 +  5];
+    key[2][1] = w[16 +  6];
+    key[3][1] = w[16 +  7];
+    key[0][2] = w[16 +  8];
+    key[1][2] = w[16 +  9];
+    key[2][2] = w[16 + 10];
+    key[3][2] = w[16 + 11];
+    key[0][3] = w[16 + 12];
+    key[1][3] = w[16 + 13];
+    key[2][3] = w[16 + 14];
+    key[3][3] = w[16 + 15];
 
-		sb(st);
-		sr(st);
-		/*if(i != 10)*/	mc(st);
-		// ark();
-	}
+    sb(st);
+    sr(st);
+	mc(st);
 }
 
 
@@ -346,10 +359,10 @@ void ark(unsigned char st[4][4]) {
 }
 
 void ke(){
-  unsigned char Rcon[16]=
-	{0x01,0x01,0x02,0x04,0x08,0x10,0x20,0x40,0x80,0x1b,0x36,0x6c,0xd8,0xab,0x4d,0x9a};
-	unsigned char sbox[256] =
-	{ 0x63,0x7c,0x77,0x7b,0xf2,0x6b,0x6f,0xc5,0x30,0x01,0x67,0x2b,0xfe,0xd7,0xab,0x76,
+    unsigned char Rcon[16]=
+	    {0x01,0x01,0x02,0x04,0x08,0x10,0x20,0x40,0x80,0x1b,0x36,0x6c,0xd8,0xab,0x4d,0x9a};
+	unsigned char sbox[256] = {
+        0x63,0x7c,0x77,0x7b,0xf2,0x6b,0x6f,0xc5,0x30,0x01,0x67,0x2b,0xfe,0xd7,0xab,0x76,
 		0xca,0x82,0xc9,0x7d,0xfa,0x59,0x47,0xf0,0xad,0xd4,0xa2,0xaf,0x9c,0xa4,0x72,0xc0,
 		0xb7,0xfd,0x93,0x26,0x36,0x3f,0xf7,0xcc,0x34,0xa5,0xe5,0xf1,0x71,0xd8,0x31,0x15,
 		0x04,0xc7,0x23,0xc3,0x18,0x96,0x05,0x9a,0x07,0x12,0x80,0xe2,0xeb,0x27,0xb2,0x75,
@@ -391,9 +404,9 @@ void ke(){
 	i = 4*Nk;
 	while(i < 4*Nb*(Nr+1)) {
 		temp1 = w[i-4];
-                temp2 = w[i-3];
-                temp3 = w[i-2];
-                temp4 = w[i-1];
+        temp2 = w[i-3];
+        temp3 = w[i-2];
+        temp4 = w[i-1];
 		if (i % (4*Nk) == 0){
 			//RotWord
 			temp = temp1;
