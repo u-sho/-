@@ -12,6 +12,8 @@ void stringToMatrix(const unsigned char[], unsigned char[4][4]);
 void midEncrypt(unsigned char[4][4]);
 int deffByteBetween(const unsigned char[4][4], const unsigned char[4][4]);
 void printPosOfDiff(const unsigned char[4][4], const unsigned char[4][4]);
+void initKey(void);
+int generateKey(void);
 // void inv_sb();
 // void inv_sr();
 // void inv_mc();
@@ -58,7 +60,10 @@ unsigned char pt[13][2][33] =
 	 {"92d412ac62f1ed57172f75536f95297f",
 	 	"12d412ac6235ed57172f1c536f95292b"}};
 
+//13の平文ペアを格納するための配列
 unsigned char state[13][2][4][4];
+
+
 
 
 
@@ -75,6 +80,7 @@ unsigned char state2[4][4] =
  	 {0x00,0x00,0x00,0x00}};
 
 unsigned char key[4][4];
+unsigned char nextKey[4][4] = {0};
 
 // unsigned char
 // key11,key12,key13,key14,key21,key22,key23,key24,
@@ -138,7 +144,11 @@ void printPosOfDiff(const unsigned char mt1[4][4], const unsigned char mt2[4][4]
 }
 
 int main(void){
+
+
 	int i, j;
+
+
 	for(i = 0; i < 13; i++){
 		for(j = 0; j < 2; j++){
 			stringToMatrix(pt[i][j], state[i][j]);
@@ -147,35 +157,83 @@ int main(void){
 
 
 	for(i = 0; i < 13; i++){
+		initKey();
 		printf("平文ペア%d\n", i + 1);
 
 		printMatrix("平文1　", state[i][0]);
 		printMatrix("平文2　", state[i][1]);
-		printf("差分　　: %dバイト\n", deffByteBetween(state[i][0], state[i][1]));
-		printf("差分位置: ");
-		printPosOfDiff(state[i][0], state[i][0]);
+		// printf("差分　　: %dバイト\n", deffByteBetween(state[i][0], state[i][1]));
+		// printf("差分位置: ");
+		// printPosOfDiff(state[i][0], state[i][0]);
 
-		midEncrypt(state[i][0]);
-		midEncrypt(state[i][1]);
+		while(generateKey() && (deffByteBetween(state[i][0], state[i][1]) > 1)){
+			midEncrypt(state[i][0]);
+			midEncrypt(state[i][1]);
+		}
 		printMatrix("中間値1", state[i][0]);
 		printMatrix("中間値2", state[i][1]);
 		printf("差分　　: %dバイト\n", deffByteBetween(state[i][0], state[i][1]));
-		printf("差分位置: ");
-		printPosOfDiff(state[i][0], state[i][0]);
+		printMatrix("鍵　　　", key);
+		// printf("差分位置: ");
+		// printPosOfDiff(state[i][0], state[i][0]);
 
 		putchar('\n');
 	}
+
+	return 0;
 }
 
+int generateKey(void){
+	int i, j;
+	for(i = 0; i < 4;i ++){
+		for(j = 0; j < 4; j++){
+			key[i][j] = nextKey[i][j];
+		}
+	}
+
+	// printMatrix("鍵", key);
+
+
+	if(nextKey[3][3] < 255){
+		nextKey[3][3]++;
+	}else{
+		nextKey[3][3] = 0;
+		if(nextKey[2][2] < 255){
+			nextKey[2][2]++;
+		}else{
+			nextKey[2][2] = 0;
+			if(nextKey[1][1] < 255){
+				nextKey[1][1]++;
+			}else{
+				nextKey[1][1] = 0;
+				if(nextKey[0][0] < 255){
+					nextKey[0][0]++;
+				}else{
+					return 0; //これ以上鍵を生成できない．
+				}
+			}
+		}
+	}
+	return 1;
+}
+
+void initKey(void){
+	int i, j;
+	for(i = 0; i < 4; i++){
+		for(j = 0; j < 4; j++){
+			nextKey[i][j] = 0;
+		}
+	}
+}
 
 void midEncrypt(unsigned char st[4][4]){
 
 	int i, j;
-	for(i = 0; i < 4; i++){
-		for(j = 0; j < 4; j++){
-			key[j][i] = 4 * i + j;
-		}
-	}
+	// for(i = 0; i < 4; i++){
+	// 	for(j = 0; j < 4; j++){
+	// 		key[j][i] = 4 * i + j;
+	// 	}
+	// }
 
 	ke();
 	ark(st);
